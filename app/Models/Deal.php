@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\QueryParser;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -48,17 +50,28 @@ class Deal extends Model
     public $timestamps = false;
 
     /**
-     * Scope a query to only include active users.
+     * Scope by a query string.
      */
     public function scopeSearch(Builder $query, $request): void
     {
-        $query->when($request['title'],fn($query,$title)=>$query);
-    }
+        $terms = str($request->input('q'))->explode(',');
 
-    public function filter($input): Attribute
-    {
-        return new Attribute(
-            get: fn () => new Filter($input),
-        );
+        $terms->each(function ($term) use ($query) {
+
+            // $parts = str($term)->explode(' ');
+
+            // if ($parts->count() !== 3) throw new Exception('The query string is malformed', 400);
+
+            [$attribute, $operator, $value] = new QueryParser($term);
+
+            $query->when($attribute === 'title', function ($query) use ($operator, $value) {
+                $comparisonOperator = str($operator)->contains('=') ? '=' : 'like';
+                $query->where('title', $comparisonOperator, '%' . $value . '%');
+            });
+
+            $query->when($attribute === 'salePrice' && str($operator)->contains(['<', '>']), function ($query) use ($operator, $value) {
+                $query->where('salePrice', $operator, $value);
+            });
+        });
     }
 }
