@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Services\QueryParser;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -58,11 +57,11 @@ class Deal extends Model
 
         $terms->each(function ($term) use ($query) {
 
-            // $parts = str($term)->explode(' ');
+            $parts = str($term)->explode(' ');
 
-            // if ($parts->count() !== 3) throw new Exception('The query string is malformed', 400);
+            if ($parts->count() !== 3) throw new Exception('The query string is malformed', 400);
 
-            [$attribute, $operator, $value] = new QueryParser($term);
+            [$attribute, $operator, $value] = $parts->map(fn ($value) => trim($value))->toArray();
 
             $query->when($attribute === 'title', function ($query) use ($operator, $value) {
                 $comparisonOperator = str($operator)->contains('=') ? '=' : 'like';

@@ -3,32 +3,63 @@
 namespace App\Services;
 
 use Exception;
-use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class QueryParser
 {
 
-    /** @var Illuminate\Support\Collection $parts */
-    protected $parts;
+    /** @var Illuminate\Support\Collection $queries */
+    protected $queries;
 
     /**
-     * Invokable class that filters a query string from the request object
      *
-     * @param Illuminate\Http\Request $request
-     * @return Illuminate\Support\Collection
+     * @param string $query
      **/
     public function __construct(string $query)
     {
-        $this->parts = str($query)->explode(' ');
+
+        $this->queries = str($query)->explode(',');
     }
 
     /**
-     * If the query doesn't have 3 keys, it means it is missing either an attribute, operator or value
-     * @return bool
+     * Tries to get the parts of the query has 3 keys, attribute, operator or value
+     *
+     * @return Illuminate\Support\Collection
      * @throws \Exception
-     */
-    public function isValid()
+     **/
+    public function parts()
     {
-        return $this->parts->count() !== 3 ?? throw new Exception('The query string is malformed', 400);
+        $parts = $this->queries->map(function ($part) {
+            $operator = collect([':', '=', '>', '<'])->first(fn ($op) => Str::contains($part, $op));
+            if (($attribute = Str::before($part, $operator)) == 'title' && Str::contains($operator, [':', '='])) {
+                return collect(
+                    [
+                        'attribute' => $attribute,
+                        'operator' => $operator,
+                        'value' => Str::after($part, $operator)
+                    ]
+                );
+            }
+
+            if (!Str::contains($operator, ['>', '<']) && $attribute !== 'salePrice') {
+                throw new Exception("The query string is malformed", 400);
+            }
+
+            if (!is_numeric($value = Str::after($part, $operator)) || $value <= 0) {
+                throw new Exception("The price is not a valid number", 400);
+            }
+
+            return collect([
+                'attribute' => 'sale_price',
+                'operator' => $operator,
+                'value' => $value
+            ]);
+        });
+
+        if ($parts->every(fn ($part) => $part->count() == 3)) {
+            return $parts;
+        } else {
+            throw new Exception('One or more of the properties ', 400);
+        }
     }
 }
