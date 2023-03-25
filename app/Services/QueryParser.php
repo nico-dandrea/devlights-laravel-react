@@ -10,6 +10,16 @@ class QueryParser
     /** @var Illuminate\Support\Collection $queries */
     protected $queries;
 
+    /** @var array $validOperators the valid operators for the parser */
+    protected $validOperators = [':', '=', '>', '<'];
+
+    /** @var array $titleOperators the valid operators for a title parser */
+    protected $titleOperators = [':', '='];
+
+    /** @var array $priceOperators the valid operators for a price parser */
+    protected $priceOperators = ['>', '<'];
+
+
     /**
      *
      * @param string $query
@@ -30,44 +40,32 @@ class QueryParser
      **/
     public function parts()
     {
-        //TODO implement check for count == 1 and another for count >= 1
+
+        //If the query has no comma, return the string
+
         if ($this->queries->count() == 1) {
+            $query = $this->queries->first();
+            return $this->queries->contains($this->validOperators) ? collect($this->stringParts($query)) : '%' . $query . '%';
         }
+
+
         return $this->queries->map(function ($part) {
 
             $parts = $this->stringParts($part);
-            //Retrieves the operator part of the string
-            $operator = collect([':', '=', '>', '<'])->first(fn ($op) => Str::contains($part, $op));
 
-            //Retrieves the value part of the string
-            $value = trim(Str::after($part, $operator));
-
-            //Checks if the string contains a valid title operator
-            if (($attribute = trim(Str::before($part, $operator))) == 'title' && Str::contains($operator, [':', '='])) {
-                return collect(
-                    [
-                        'attribute' => $attribute,
-                        'operator' => $operator,
-                        'value' => $value
-                    ]
-                );
+            if ($parts->has('title') && !Str::contains($parts->get('operator'), $this->priceOperators)) {
+                throw new \Exception('The title has an invalid operator', 400);
             }
 
-            //Checks if the string contains a valid sale price operator
-            if (!Str::contains($operator, ['>', '<']) && $attribute !== 'salePrice') {
-                throw new \Exception("The query string is malformed", 400);
+            if ($parts->has('sale_price') && is_numeric($parts->get('value'))) {
+                throw new \Exception('The price is not a valid number', 400);
             }
 
-            //Checks if the string after the operator is a natural number
-            if (!is_numeric($value) || $value <= 0) {
-                throw new \Exception("The price is not a valid number", 400);
+            if ($parts->has('sale_price') && $parts->get('value') < 0) {
+                throw new \Exception('The price must be a number greater than zero', 400);
             }
 
-            return collect([
-                'attribute' => 'sale_price',
-                'operator' => $operator,
-                'value' => $value
-            ]);
+            return $parts;
         });
     }
 
@@ -75,12 +73,13 @@ class QueryParser
      * Formatter helper for the query string
      *
      * @param string $query
+     * @throws \Exception
      * @return Illuminate\Support\Collection
      **/
     protected function stringParts(string $query)
     {
         //Retrieves the operator part of the string
-        $operator = collect([':', '=', '>', '<'])->first(fn ($op) => Str::contains($query, $op));
+        $operator = collect($this->validOperators)->first(fn ($op) => Str::contains($query, $op));
 
         if ($operator === null) {
             throw new \Exception('The string does not contain an operator', 400);
@@ -93,21 +92,11 @@ class QueryParser
             throw new \Exception('The string does not contain a valid property name', 400);
         }
 
+        $value = trim(Str::after($query, $operator));
+
         return collect([
             'operator' => $operator,
-            $property => trim(Str::after($query, $operator))
+            $property => $operator == ':' ? '%' . $value . '%' : $value
         ]);
-    }
-
-    /**
-     * Function that validates if the parts are valid for a title comparison
-     *
-     * @param mixed $parts
-     * @return bool
-     * @throws \Exception
-     **/
-    public function isValidTitle(mixed $parts)
-    {
-        return $parts->has('title') && $parts->contains([':', '=']) ?? throw new \Exception('The string is not a valid title comparison', 400);
     }
 }

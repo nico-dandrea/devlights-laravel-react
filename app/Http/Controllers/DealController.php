@@ -17,7 +17,6 @@ class DealController extends Controller
 
     public function index(Request $request): Response
     {
-        ddd($request->getRequestUri());
-        return Inertia::render('Deal/Index', ['deals' => Deal::paginate(15)]);
+        return Inertia::render('Deal/Index', ['deals' => Deal::search($request->get('q'))->paginate(15)]);
     }
 }

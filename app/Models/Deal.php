@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Exception;
+use App\Services\QueryParser;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -51,26 +51,23 @@ class Deal extends Model
     /**
      * Scope by a query string.
      */
-    public function scopeSearch(Builder $query, $request): void
+    public function scopeSearch(Builder $query, $queryString): void
     {
-        $terms = str($request->input('q'))->explode(',');
+        $parser = new QueryParser($queryString);
 
-        $terms->each(function ($term) use ($query) {
-
-            $parts = str($term)->explode(' ');
-
-            if ($parts->count() !== 3) throw new Exception('The query string is malformed', 400);
-
-            [$attribute, $operator, $value] = $parts->map(fn ($value) => trim($value))->toArray();
-
-            $query->when($attribute === 'title', function ($query) use ($operator, $value) {
-                $comparisonOperator = str($operator)->contains('=') ? '=' : 'like';
-                $query->where('title', $comparisonOperator, '%' . $value . '%');
-            });
-
-            $query->when($attribute === 'salePrice' && str($operator)->contains(['<', '>']), function ($query) use ($operator, $value) {
-                $query->where('salePrice', $operator, $value);
-            });
-        });
+        //When the queryString is not a collection of
+        $query->when(
+            $parser->parts() instanceof string,
+            fn () => $query->where('title', 'like', '%' . $parser->parts() . '%'),
+            //When the queryString is a collection
+            $parser->parts()->each(
+                //If the property is title
+                fn ($part) => $query->when($part->has('title'),
+                    fn () => $query->where('title', $part->get('operator'), $part->get('title')),
+                    //If the property is sale_price
+                    fn () => $query->where('sale_price', $part->get('operator'), $part->get('sale_price'))
+                )
+            )
+        );
     }
 }
