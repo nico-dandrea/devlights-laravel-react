@@ -18,18 +18,14 @@ use Inertia\Inertia;
 |
 */
 
-// Route::get('/', function () {
-//     return request()->getQueryString();
-//     return Inertia::render('Welcome', [
-//         'canLogin' => Route::has('login'),
-//         'canRegister' => Route::has('register'),
-//         'laravelVersion' => Application::VERSION,
-//         'phpVersion' => PHP_VERSION,
-//     ]);
-// });
-
-// Route::get('/',[DealController::class,'index'])->name('deal.index');
-Route::get('/', fn (Request $request) => Deal::search($request->get('q'))->paginate(15))->name('deal.index');
+Route::get('/', function () {
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
+});
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
