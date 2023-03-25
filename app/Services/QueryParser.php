@@ -2,101 +2,121 @@
 
 namespace App\Services;
 
+use App\Exceptions\EmptyValueException;
+use App\Exceptions\InvalidPriceException;
+use App\Exceptions\InvalidOperatorException;
+use App\Exceptions\NegativeNumberException;
 use Illuminate\Support\Str;
 
 class QueryParser
 {
 
-    /** @var Illuminate\Support\Collection $queries */
-    protected $queries;
+    /** @var Illuminate\Support\Collection $queryStrings */
+    protected static $queryStrings;
 
     /** @var array $validOperators the valid operators for the parser */
-    protected $validOperators = [':', '=', '>', '<'];
+    private static $validOperators = [':', '=', '>', '<'];
 
     /** @var array $titleOperators the valid operators for a title parser */
-    protected $titleOperators = [':', '='];
-
-    /** @var array $priceOperators the valid operators for a price parser */
-    protected $priceOperators = ['>', '<'];
-
-
-    /**
-     *
-     * @param string $query
-     **/
-    public function __construct(string $query)
-    {
-
-        $this->queries = str($query)->explode(',');
-    }
-
-
+    private static $titleOperators = [':', '='];
 
     /**
      * Tries to get the parts of the query has 3 keys, attribute, operator or value
      *
-     * @return Illuminate\Support\Collection
+     * @param string $query
+     * @return mixed
      * @throws \Exception
      **/
-    public function parts()
+    public static function parse(string $query): mixed
     {
+
+        self::$queryStrings = str($query)->explode(',');
 
         //If the query has no comma, return the string
 
-        if ($this->queries->count() == 1) {
-            $query = $this->queries->first();
-            return $this->queries->contains($this->validOperators) ? collect($this->stringParts($query)) : '%' . $query . '%';
+        if (self::$queryStrings->count() == 1) {
+
+            $query = self::$queryStrings->first();
+
+            if (Str::contains($query, self::$validOperators)) {
+
+                $parts = self::parseQueryString($query);
+
+                self::validateParts($parts);
+
+                return collect($parts);
+            } else {
+
+                return collect(self::parseQueryString('title:' . trim($query)));
+            }
         }
 
 
-        return $this->queries->map(function ($part) {
+        return self::$queryStrings->map(function ($string) {
 
-            $parts = $this->stringParts($part);
+            $parts = self::parseQueryString($string);
 
-            if ($parts->has('title') && !Str::contains($parts->get('operator'), $this->priceOperators)) {
-                throw new \Exception('The title has an invalid operator', 400);
-            }
-
-            if ($parts->has('sale_price') && is_numeric($parts->get('value'))) {
-                throw new \Exception('The price is not a valid number', 400);
-            }
-
-            if ($parts->has('sale_price') && $parts->get('value') < 0) {
-                throw new \Exception('The price must be a number greater than zero', 400);
-            }
+            self::validateParts($parts);
 
             return $parts;
         });
     }
 
+
     /**
-     * Formatter helper for the query string
+     *
+     * Function that checks if the query parts is correct
+     *
+     * @param mixed $parts
+     * @return bool
+     * @throws \Exception
+     **/
+    private static function validateParts(mixed $parts)
+    {
+
+        if ($parts->has('title') && !Str::contains($parts->get('operator'), self::$titleOperators)) {
+            throw new InvalidOperatorException();
+        }
+
+        if ($parts->has('sale_price') && !is_numeric($parts->get('sale_price'))) {
+            throw new InvalidPriceException();
+        }
+
+        if ($parts->has('sale_price') && $parts->get('sale_price') < 0) {
+            throw new NegativeNumberException();
+        }
+
+        return true;
+    }
+
+    /**
+     * Return a collection if the query string contains a valid operator
      *
      * @param string $query
      * @throws \Exception
      * @return Illuminate\Support\Collection
      **/
-    protected function stringParts(string $query)
+    private static function parseQueryString(string $query)
     {
         //Retrieves the operator part of the string
-        $operator = collect($this->validOperators)->first(fn ($op) => Str::contains($query, $op));
+        $queryOperator = collect(self::$validOperators)->first(fn ($op) => Str::contains($query, $op));
 
-        if ($operator === null) {
-            throw new \Exception('The string does not contain an operator', 400);
+        if ($queryOperator === null) {
+            throw new InvalidOperatorException();
         }
 
         //Retrieves the column name that the value will use to compare against the db
-        $property = str($query)->before($operator)->trim()->snake()->__toString();
+        $queryProperty = str($query)->before($queryOperator)->trim()->snake()->__toString();
 
-        if (!Str::contains($property, ['title', 'sale_price'])) {
-            throw new \Exception('The string does not contain a valid property name', 400);
+        $value = trim(Str::after($query, $queryOperator));
+
+        if (empty($value)) {
+            throw new EmptyValueException();
         }
 
-        $value = trim(Str::after($query, $operator));
-
         return collect([
-            'operator' => $operator,
-            $property => $operator == ':' ? '%' . $value . '%' : $value
+            $queryProperty => $queryOperator == ':' ? '%' . $value . '%' : $value,
+            'operator' => $queryOperator,
         ]);
     }
 }

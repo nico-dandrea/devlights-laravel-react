@@ -51,22 +51,20 @@ class Deal extends Model
     /**
      * Scope by a query string.
      */
-    public function scopeSearch(Builder $query, $queryString): void
+    public function scopeSearch(Builder $query, string $queryString): void
     {
-        $parser = new QueryParser($queryString);
-
-        //When the queryString is not a collection of
+        $parsedQuery = QueryParser::parse($queryString);
+        //When the parsedQuery has a single query
         $query->when(
-            $parser->parts() instanceof string,
-            fn () => $query->where('title', 'like', '%' . $parser->parts() . '%'),
-            //When the queryString is a collection
-            $parser->parts()->each(
+            $parsedQuery->has('operator'),
+            fn () => $query->where('title', 'like', $parsedQuery->get('title')),
+            //Else iterate over each parsedQuery
+            fn ($queryParts) => $query->when(
                 //If the property is title
-                fn ($part) => $query->when($part->has('title'),
-                    fn () => $query->where('title', $part->get('operator'), $part->get('title')),
-                    //If the property is sale_price
-                    fn () => $query->where('sale_price', $part->get('operator'), $part->get('sale_price'))
-                )
+                $queryParts->has('title'),
+                fn () => $query->where('title', $queryParts->get('operator'), $queryParts->get('title')),
+                //If the property is sale_price
+                fn () => $query->where('sale_price', $queryParts->get('operator'), $queryParts->get('sale_price'))
             )
         );
     }
