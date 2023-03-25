@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\DealCollection;
 use App\Models\Deal;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Response;
 use Inertia\Inertia;
@@ -18,14 +20,11 @@ class DealController extends Controller
 
     public function index(Request $request): Response
     {
-        $dealResults = Deal::search($request->get('q'))->paginate(15)->cache();
-
-        $cacheKey =  'deal.search.' . md5(json_encode($dealResults->toArray()));
-
-        $ttl = 120;
-
-        $deals = Cache::remember($cacheKey, $ttl, fn () => $dealResults);
-
-        return Inertia::render('Deal/Index', compact('deals'));
+        return Inertia::render('Index', [
+            'deals' => Cache::remember('deals', 120, fn () => new DealCollection(Deal::limit(10)->get())),
+            'laravelVersion' => Application::VERSION,
+            'phpVersion' => PHP_VERSION,
+            // 'deals' => Cache::remember('deals', 120, fn () => Deal::search($request->get('q'))->paginate(15))
+        ]);
     }
 }

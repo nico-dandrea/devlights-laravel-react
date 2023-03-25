@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Services\QueryParser;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class Deal extends Model
 {
@@ -66,6 +68,13 @@ class Deal extends Model
                 //If the property is sale_price
                 fn () => $query->where('sale_price', $queryParts->get('operator'), $queryParts->get('sale_price'))
             )
+        );
+    }
+
+    public function releaseDate(): Attribute
+    {
+        return new Attribute(
+            get: fn ($value) => Carbon::createFromTimestamp($value)->format('Y/m/d'),
         );
     }
 }

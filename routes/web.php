@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DealController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Deal;
 use Illuminate\Foundation\Application;
@@ -18,14 +19,7 @@ use Inertia\Inertia;
 |
 */
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::get('/', [DealController::class, 'index'])->name('deal.index');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
