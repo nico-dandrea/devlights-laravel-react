@@ -16,7 +16,7 @@ const DealCard = ({ deal }) => {
             <div className="p-4">
                 <div className="flex justify-between">
                     <p className="text-gray-600 text-">Before <span className='line-through'>${deal.normalPrice}</span></p>
-                    <p className="text-red-600 font-semibold">Now ${deal.salePrice}</p>
+                    <p className="text-red-600 font-semibold">Now {Math.round(deal.savings)}% OFF! ${deal.salePrice}</p>
                 </div>
                 <div className="flex justify-between">
                     <p className="text-gray-600">Release Date</p>

@@ -22,7 +22,9 @@ class DealController extends Controller
     public function index(Request $request): Response
     {
         try {
-            if (!empty($query = $request->input('q'))) {
+            $query = $request->input('q');
+            $cacheKey = md5('deals.' . $query);
+            if (str($query)->isNotEmpty()) {
                 $deals = Deal::search($query)->limit(12);
             } else {
                 $deals = Deal::limit(12);
@@ -31,10 +33,11 @@ class DealController extends Controller
             $deals = collect();
         }
         return Inertia::render('Index', [
-            'deals' => $deals instanceof Builder ? new DealCollection($deals->get()) : $deals,
-            // 'deals' => $deals instanceof Builder ? Cache::remember('deals', 120, fn () => new DealCollection($deals->get())) : $deals,
+            // 'deals' => $deals instanceof Builder ? new DealCollection($deals->get()) : $deals,
+            'deals' => $deals instanceof Builder ? Cache::remember($cacheKey, 60, fn () => new DealCollection($deals->get())) : $deals,
             'laravelVersion' => Application::VERSION,
             'phpVersion' => PHP_VERSION,
         ]);
     }
+    // 'deals' => $deals instanceof Builder ? Cache::remember('deals', 120, fn () => new DealCollection($deals->get())) : $deals,
 }

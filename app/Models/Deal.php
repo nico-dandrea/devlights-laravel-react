@@ -55,20 +55,21 @@ class Deal extends Model
      */
     public function scopeSearch(Builder $query, string $queryString): void
     {
+
+
+        // Parse the query string into a collection of query parts
         $parsedQuery = QueryParser::parse($queryString);
-        //When the parsedQuery has a single query
-        $query->when(
-            $parsedQuery->has('operator'),
-            fn () => $query->where('title', 'like', $parsedQuery->get('title')),
-            //Else iterate over each parsedQuery
-            fn ($queryParts) => $query->when(
-                //If the property is title
-                $queryParts->has('title'),
-                fn () => $query->where('title', $queryParts->get('operator'), $queryParts->get('title')),
-                //If the property is sale_price
-                fn () => $query->where('sale_price', $queryParts->get('operator'), $queryParts->get('sale_price'))
-            )
-        );
+
+        // Check if the query has an operator it means it's a single query
+        if ($parsedQuery->has('operator')) {
+            $query->where($parsedQuery->get('property'), $parsedQuery->get('operator'), $parsedQuery->get('value'));
+        } else {
+            // If it doesn't have an operator, iterate over each query part
+            foreach ($parsedQuery as $queryParts) {
+
+                $query->where($queryParts->get('property'), $queryParts->get('operator'), $queryParts->get('value'));
+            }
+        }
     }
 
     public function releaseDate(): Attribute

@@ -18,7 +18,7 @@ class QueryParser
     private static $validOperators = [':', '=', '>', '<'];
 
     /** @var array $titleOperators the valid operators for a title parser */
-    private static $titleOperators = [':', '='];
+    private static $titleOperators = ['like', '='];
 
     /**
      * Tries to get the parts of the query has 3 keys, attribute, operator or value
@@ -74,15 +74,15 @@ class QueryParser
     private static function validateParts(mixed $parts)
     {
 
-        if ($parts->has('title') && !Str::contains($parts->get('operator'), self::$titleOperators)) {
+        if ($parts->contains('title') && !Str::contains($parts->get('operator'), self::$titleOperators)) {
             throw new InvalidOperatorException();
         }
 
-        if ($parts->has('sale_price') && !is_numeric($parts->get('sale_price'))) {
+        if ($parts->contains('sale_price') && !is_numeric($parts->get('value'))) {
             throw new InvalidPriceException();
         }
 
-        if ($parts->has('sale_price') && $parts->get('sale_price') < 0) {
+        if ($parts->contains('sale_price') && $parts->get('value') < 0) {
             throw new NegativeNumberException();
         }
 
@@ -110,13 +110,14 @@ class QueryParser
 
         $value = trim(Str::after($query, $queryOperator));
 
-        if (empty($value)) {
+        if ($value == '') {
             throw new EmptyValueException();
         }
 
         return collect([
-            $queryProperty => $queryOperator == ':' ? '%' . $value . '%' : $value,
-            'operator' => $queryOperator,
+            'property' => $queryProperty,
+            'value' => $queryOperator == ':' ? '%' . $value . '%' : $value,
+            'operator' => $queryOperator === ':' ? 'like' : $queryOperator,
         ]);
     }
 }

@@ -27,8 +27,8 @@ return new class extends Migration
             $table->integer('steam_rating_percent')->default(0);
             $table->integer('steam_rating_count')->default(0);
             $table->unsignedBigInteger('steam_app_id')->nullable();
-            $table->timestamp('release_date');
-            $table->timestamp('last_change');
+            $table->integer('release_date');
+            $table->integer('last_change');
             $table->decimal('deal_rating', 3, 1)->nullable();
             $table->string('thumb')->nullable();
         });
