@@ -7,6 +7,19 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## About the Project
+
+The project is meant to be run with [Docker Compose](https://docs.docker.com/compose/) or [Laravel Sail](https://laravel.com/docs/10.x/sail)
+To run the project follow these steps
+- Have Docker installed, this project was tested using Docker version 23.0.1, build a5ee5b1
+- Have Docker Compose installed, this project was tested using Docker Compose version v2.16.0
+- Run the containers using `docker compose up` or `./vendor/bin/sail up`
+- Run the containers using the command `./vendor/bin/sail up` as sail being a composer dependency, you will need to have php and composer installed
+- Run in a separate terminal the command `sail composer install && sail npm install`
+- Run the migrations and seed the database `sail artisan migrate --seed`
+- Run the web server by using the command `sail npm run dev`
+Thank you for checking my app!
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
