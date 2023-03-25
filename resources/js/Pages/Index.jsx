@@ -1,13 +1,5 @@
-import DealCard from '@/Components/DealCard';
+import DealsBoard from '@/Components/DealsBoard';
 import { usePage, Link, Head } from '@inertiajs/react';
-
-function DealsList({ deals }) {
-    return (<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {deals.data.map((deal) => (
-            <DealCard key={deal.dealID} deal={deal} />
-        ))}
-    </div>);
-}
 
 export default function Index({ deals, laravelVersion, phpVersion }) {
     return (
@@ -24,10 +16,7 @@ export default function Index({ deals, laravelVersion, phpVersion }) {
                             />
                         </div>
                     </div>
-                    <div className="mt-16">
-                        <DealsList deals={deals} />
-                    </div>
-
+                    <DealsBoard deals={deals} />
                     <div className="flex justify-center mt-16 px-6 sm:items-center sm:justify-between">
                         <div className="text-center text-sm text-gray-500 dark:text-gray-400 sm:text-left">
                             <div className="flex items-center gap-4">

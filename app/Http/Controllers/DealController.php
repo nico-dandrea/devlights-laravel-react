@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\DealCollection;
 use App\Models\Deal;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
@@ -20,11 +21,20 @@ class DealController extends Controller
 
     public function index(Request $request): Response
     {
+        try {
+            if (!empty($query = $request->input('q'))) {
+                $deals = Deal::search($query)->limit(12);
+            } else {
+                $deals = Deal::limit(12);
+            }
+        } catch (\Throwable $th) {
+            $deals = collect();
+        }
         return Inertia::render('Index', [
-            'deals' => Cache::remember('deals', 120, fn () => new DealCollection(Deal::limit(10)->get())),
+            'deals' => $deals instanceof Builder ? new DealCollection($deals->get()) : $deals,
+            // 'deals' => $deals instanceof Builder ? Cache::remember('deals', 120, fn () => new DealCollection($deals->get())) : $deals,
             'laravelVersion' => Application::VERSION,
             'phpVersion' => PHP_VERSION,
-            // 'deals' => Cache::remember('deals', 120, fn () => Deal::search($request->get('q'))->paginate(15))
         ]);
     }
 }
