@@ -13,11 +13,26 @@ The project is meant to be run with [Docker Compose](https://docs.docker.com/com
 To run the project follow these steps
 - Have Docker installed
 - Have Docker Compose installed
-- Run the containers using `docker compose up` or `./vendor/bin/sail up`
-- Run the containers using the command `./vendor/bin/sail up` as sail being a composer dependency, you will need to have php and composer installed
-- Run in a separate terminal the command `sail composer install && sail npm install`
-- Run the migrations and seed the database `sail artisan migrate --seed`
-- Run the web server by using the command `sail npm run dev`
+
+## Before anything else, be sure to create a `.env` file and paste the contents of the `.env.example` file
+
+## If using Docker Compose
+- Run the containers using `docker compose up` or `docker compose up -d` if you want to run in detached mode
+- Run the following commands:
+    - `docker compose exec laravel.test composer install` to install Composer dependencies
+    - `docker compose exec laravel.test npm install` to install Node.js dependencies
+    - `docker compose exec laravel.test php artisan migrate --seed` To create and populate the tables in the MYSQL Database
+- Run the web server by using the command `docker compose exec laravel.test npm run dev`
+
+## If using Laravel Sail
+- Create a temporal alias for Sail by running the command `alias sail='[ -f sail ] && sh sail || sh vendor/bin/sail'`
+- Run the containers using `sail up` or `sail up -d` if you want to run in detached mode
+- Run the following commands:
+    - `sail composer install` to install Composer dependencies
+    - `sail npm install` to install Node.js dependencies
+    - `sail artisan migrate --seed` To create and populate the tables in the MYSQL Database
+- Run the web server by using the command `sail num run dev`
+
 Thank you for checking my app!
 
 I tested this project having the following versions:
