@@ -33,7 +33,6 @@ class DealController extends Controller
             $deals = collect();
         }
         return Inertia::render('Index', [
-            // 'deals' => $deals instanceof Builder ? new DealCollection($deals->get()) : $deals,
             'deals' => $deals instanceof Builder ? Cache::remember($cacheKey, 60, fn () => new DealCollection($deals->get())) : $deals,
             'laravelVersion' => Application::VERSION,
             'phpVersion' => PHP_VERSION,

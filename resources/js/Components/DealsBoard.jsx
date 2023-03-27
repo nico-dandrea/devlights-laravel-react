@@ -1,20 +1,32 @@
 import { useForm } from '@inertiajs/react';
 import DealCard from '@/Components/DealCard';
+import { useEffect, useState } from 'react';
 
 function Search() {
-    const { data, get, setData, } = useForm({ q: '' });
+    const { data, get, setData } = useForm({ q: '' });
+    const [timerId, setTimerId] = useState(null);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        get('/', { q: data.q });
-    };
+    useEffect(() => {
+        if (timerId) {
+            clearTimeout(timerId);
+        }
+        if (data.q) {
+            setTimerId(setTimeout(() => {
+                getDeals();
+            }, 500));
+        }
+    }, [data.q]);
+
+    const getDeals = () => {
+        get('/', { q: data.q, preserveState: true });
+    }
 
     const handleInputChange = (e) => {
         setData('q', e.target.value);
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4">
             <input
                 type="text"
                 name="q"
@@ -23,13 +35,7 @@ function Search() {
                 placeholder="Search"
                 className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
-            <button
-                type="submit"
-                className="px-4 py-2 bg-red-400 text-white rounded-md hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300"
-            >
-                Search
-            </button>
-        </form>
+        </div>
     );
 }
 

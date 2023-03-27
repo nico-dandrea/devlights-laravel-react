@@ -26,7 +26,7 @@ const DealCard = ({ deal }) => {
             <div className="text-gray-500 text-sm my-2 px-4">Steam user rating: {deal.steamRatingText} ({deal.steamRatingPercent}%)</div>
             <div className="text-gray-500 text-sm my-2 px-4">{deal.steamRatingCount} Reviews</div>
             <div className="my-4">
-                <a href={`https://www.metacritic.com/${deal.metacriticLink}`} className="text-red-500 px-4 rounded-md hover:text-red-400 transition-colors duration-150">View deal</a>
+                <a href={`https://www.metacritic.com/${deal.metacriticLink}`} className="text-slate-400 px-4 rounded-md hover:text-slate-500 transition-colors duration-150">View deal</a>
             </div>
         </div>
     );
